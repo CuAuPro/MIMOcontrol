@@ -1,0 +1,173 @@
+%%
+clear all;close all;
+
+%% System Parameters
+
+% Physical constants
+r = 0.07; %m;
+S = 0.0152; %m
+
+% Steady states
+u1_ss = -4; %V (napetost vzbujanja prve crpalke v delovni tocki)
+u2_ss = -3.5; %V (napetost vzbujanja druge crpalke v delovni tocki)
+x1_ss = 0.7712; %V (napetost prvega senzorja v delovni tocki)
+x2_ss = 3.2841; %V (napetost drugega senzorja v delovni tocki)
+x3_ss = 4.8098; %V (napetost tretjega senzorja v delovni tocki)
+% oziroma
+h1_ss = 0.3030; % m (normalna visina vode v prvem shranjevalniku)
+h2_ss = 0.2290; % m  (normalna visina vode v drugem shranjevalniku)
+h3_ss = 0.1520; % m  (normalna visina vode v tretjem shranjevalniku)
+
+
+% Constants
+Ks1 = -27.6937; %V/m
+Ks2 = -27.5827; %V/m
+Ks3 = -27.5087; %V/m
+Kos1 = 9.1500; %V
+Kos2 = 9.6000; %V
+Kos3 = 9.0000; %V
+K32 = -0.1107*10e-3; % m/s
+K31 = 0.1747*10e-3; % m/s
+K30 = 0.0360*10e-3; % m/s
+
+%% Curve fitting
+pump1_u = [-10 -9 -8 -7 -6 -5 -4.5 -4.4 -4 -3.85 -3.6 -3.5 -3.15 -3 -2.5 -2.3 -2.1 -1.9 -1.7 -1.5 -1.3 -1.1 -0.9 -0.7 -0.5 -0.3 -0.1 0 1 2 3 4 5 6 7 8 9 10];
+pump1_flow = [0.00000000000 0.00000000000 0.00000689390 0.00001238400 0.00001775100 0.00002311700 0.00002571800 0.00002630800 0.00002836600 0.00002892000 0.00003038100 0.00003094700 0.00003231900 0.00003196800 0.00003715200 0.00003888600 0.00004000100 0.00004024900 0.00004123900 0.00004161100 0.00004173500 0.00004179700 0.00004185800 0.00004303500 0.00004532600 0.00004644100 0.00004829800 0.00004935100 0.00005461400 0.00005981600 0.00006390200 0.00006922700 0.00007554300 0.00008024900 0.00008384100 0.00008507900 0.00009312900 0.00009783500];
+
+pump2_u = [-10 -9 -8 -7 -6 -5 -4.5 -4.4 -4 -3.85 -3.6 -3.5 -3.15 -3 -2.5 -2.3 -2.1 -1.9 -1.7 -1.5 -1.3 -1.1 -0.9 -0.7 -0.5 -0.3 -0.1 0 1 2 3 4 5 6 7 8 9 10];
+pump2_flow = [0.0000000000 0.0000000000 0.0000077952 0.0000136100 0.0000192980 0.0000248600 0.0000278520 0.0000277270 0.0000298140 0.0000305550 0.0000321400 0.0000325130 0.0000338560 0.0000350370 0.0000428520 0.0000440000 0.0000439770 0.0000448750 0.0000449380 0.0000450010 0.0000450010 0.0000450010 0.0000445510 0.0000450010 0.0000472770 0.0000496780 0.0000517010 0.0000523960 0.0000580210 0.0000630780 0.0000678180 0.0000738220 0.0000786260 0.0000863370 0.0000892440 0.0000915200 0.0001006200 0.0001041600];
+
+valve3_h = [0.0000000 0.0079540 0.0146260 0.0218480 0.0294610 0.0374640 0.0457510 0.0543390 0.0632290 0.0724740 0.0820920 0.0919580 0.1021100 0.1125600 0.1233500 0.1344200 0.1458500 0.1575600 0.1695700 0.1819400 0.1945900 0.2075700 0.2208900 0.2345000 0.2484300 0.2627400 0.2772300 0.2920500 0.3072600 0.3227100 0.3385600 0.3547400 0.3711600 0.3878900 0.4050500 0.4224900 0.4400600 0.4580200 0.4762400 0.4948000 0.5137500 0.5330300 0.5523100 0.5716200 0.5907100 0.6000000];
+valve3_flow = [0.0000000000 0.0000324280 0.0000360720 0.0000380760 0.0000400800 0.0000420840 0.0000429950 0.0000451810 0.0000460920 0.0000488250 0.0000499180 0.0000513750 0.0000528320 0.0000544720 0.0000562940 0.0000579610 0.0000599380 0.0000615080 0.0000630350 0.0000639460 0.0000659500 0.0000672250 0.0000695930 0.0000701400 0.0000728720 0.0000739650 0.0000748760 0.0000772450 0.0000788840 0.0000797950 0.0000828920 0.0000832570 0.0000852610 0.0000865360 0.0000896330 0.0000894510 0.0000909080 0.0000934590 0.0000936410 0.0000969200 0.0000976490 0.0000978000 0.0000988000 0.0000988000 0.0001004000 0.0001006000];
+
+% Mogoce ideja za "mehki model" lookup tabele
+vari = 1;
+mu = 0.05;
+beta = exp(-0.5*(-4.4 - pump1_u).^2/(mu*vari));
+beta = beta/sum(beta);
+beta*pump1_flow'
+
+%% Calculate Valve parameters K1 and K2
+%Valve parameters: Flows in steady state are exracted from measurement
+%tables.
+
+%flow3 in steady state is same as flow1
+flow3_ss = 2.8366e-05;
+K1 = flow3_ss/(sqrt(h1_ss-h2_ss));
+
+%Equation on page 3 (fi3 - fi4 = Sdh_2/dt... Steady state --> fi3-fi4 = 0)
+K2 = K1*(sqrt(h1_ss-h2_ss))/(sqrt(h2_ss-h3_ss));
+
+%% Constrains
+u_min = -10;
+u_max = 10;
+%% Linearized model
+A = [-0.0125,  0.0126,  0.0000;
+      0.0125, -0.0246,  0.0121;
+      0.0000,  0.0120, -0.0212];
+B = [-0.0091,  0.0000;
+      0.0000,  0.0000;
+      0.0000, -0.0092];
+C = [1.0, 0.0, 0.0;
+     0.0, 0.0, 1.0];
+D = [0.0, 0.0;
+     0.0, 0.0];
+%x_initial = [x1_ss;
+%             x2_ss;
+%             x3_ss];
+
+x_initial = [0;
+             0;
+             0];
+
+%% Model analysis
+model = ss(A,B,C,D);
+poles = pole(model) %tudi eig(A)
+if (all(poles < 0))
+    fprintf("Sistem je stabilen. Poli: [%s]\n", join(string(poles), ','))
+    fprintf("Casovne konstante: [%ss]\n", join(string(-1./poles), 's, '))
+end
+nr_poles = length(poles);
+%spoznavnost
+Ob = obsv(A,C);
+if (rank(Ob)==nr_poles)
+    fprintf("Sistem je spoznaven.\n")
+else
+    fprintf("Sistem ni spoznaven.\n")
+end
+
+Co = ctrb(A,B);
+if (rank(Co)==nr_poles)
+    fprintf("Sistem je vodljiv.\n")
+else
+    fprintf("Sistem ni vodljiv.\n")
+end
+
+s = tf('s');
+G=C*(inv(s*I-A))*B+D;
+%TODO: nicle
+
+nicle = tzero(G);
+
+%funkcionalna  vodljivost
+syms s
+I=eye(n);
+G=C*(inv(s*I-A))*B+D;
+r=rank(G);
+if r==size(G,1)
+    fc_vodljiv = 1;
+    fprintf("Sistem je funkcionalno vodljiv.\n")
+else
+    fc_vodljiv = 0;
+    fprintf("Sistem ni funkcionalno vodljiv.\n")
+end
+%izhodna funkcionalna vodljivost
+
+pogoj_izh_fc_vod = all(nicle<0);
+if (fc_vodljiv & pogoj_izh_fc_vod)
+    fprintf("Sistem je izhodno funkcionalno vodljiv.\n")
+else
+    fprintf("Sistem ni izhodno funkcionalno vodljiv.\n")
+end
+
+%% Simulate parameters
+tsim = 14000; %s
+
+d_u1 = 0.4;
+d_u2 = 0.35;
+
+% u1_in = {};
+% u1_in.Vals = [u1_ss, u1_ss+d_u1, u1_ss-d_u1, u1_ss, u_min];
+% u1_in.Times = [0, 4000, 7000, 10000, 13000];
+u1_in = {};
+u1_in.Vals = [u1_ss, u_min];
+u1_in.Times = [0, 13000];
+u2_in = {};
+u2_in.Vals = [u2_ss, u2_ss+d_u2, u2_ss-d_u2, u2_ss, u_min];
+u2_in.Times = [0, 4000, 7000, 10000, 13000];
+% u2_in = {};
+% u2_in.Vals = [u2_ss, u_min];
+%u2_in.Times = [0, 13000];
+%% Simulate
+out = sim("analysis.slx");
+%% Plots for model comparison
+figure;
+sgtitle('Odziv sistema', 'Interpreter', 'latex');
+subplot(2,1,1);
+plot(out.u1.Time, out.u1.Data);
+hold on;
+plot(out.u2.Time, out.u2.Data);
+%xlabel('Cas [s]', 'Interpreter', 'latex');
+legend('$u_1$', '$u_2$', 'Interpreter', 'latex', 'Location', 'southeast');
+
+subplot(2,1,2);
+hold on;
+plot(out.h1_lin.Time, out.h1_lin.Data);
+plot(out.h3_lin.Time, out.h3_lin.Data);
+plot(out.h1_nonlin.Time, out.h1_nonlin.Data);
+plot(out.h3_nonlin.Time, out.h3_nonlin.Data);
+xlabel('Cas [s]', 'Interpreter', 'latex');
+legend('$h_{1lin}$', '$h_{3lin}$', '$h_{1nonlin}$', '$h_{3nonlin}$',...
+    'Interpreter', 'latex', 'Location', 'southeast');
+
+ylim([-0.3,0.6]);
